@@ -1,0 +1,22 @@
+[package]
+name = "candlestick-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Dhruv Soi<l33t.quant@gmail.com>"]
+description = "Candlestick pattern recognition library for technical analysis"
+license = "MIT"
+repository = "https://github.com/l33tquant/candlestick"
+documentation = "https://docs.rs/candlestick"
+readme = "README.md"
+keywords = [
+    "candlestick",
+    "trading",
+    "technical-analysis",
+    "finance",
+    "algotrading",
+]
+categories = ["algorithms", "finance", "no-std"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
