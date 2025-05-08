@@ -6,7 +6,7 @@ authors = ["Dhruv Soi<l33t.quant@gmail.com>"]
 description = "Candlestick pattern recognition library for technical analysis"
 license = "MIT"
 repository = "https://github.com/l33tquant/candlestick"
-documentation = "https://docs.rs/candlestick"
+documentation = "https://docs.rs/candlestick-rs"
 readme = "README.md"
 keywords = [
     "candlestick",
