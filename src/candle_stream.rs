@@ -1,4 +1,4 @@
-use crate::CandleStick;
+use crate::{utils::midpoint, CandleStick};
 
 const SERIES_SIZE: usize = 5;
 
@@ -19,8 +19,8 @@ const SERIES_SIZE: usize = 5;
 /// use candlestick_rs::{CandleStick, CandleStream};
 ///
 /// // Create a new stream and add candles
-/// let candle1 = (100.0, 105.0, 99.0, 104.0);
-/// let candle2 = (104.5, 110.0, 104.0, 109.0);
+/// let candle1 = (100.0, 105.0, 99.0, 104.0, 0.0);
+/// let candle2 = (104.5, 110.0, 104.0, 109.0, 0.0);
 ///
 /// let mut stream = CandleStream::new();
 /// stream.push(&candle1).push(&candle2);
@@ -84,8 +84,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (52.0, 52.5, 48.0, 48.5);      
-    /// let curr = (47.0, 47.5, 46.8, 47.0);
+    /// let prev = (52.0, 52.5, 48.0, 48.5, 0.0);      
+    /// let curr = (47.0, 47.5, 46.8, 47.0, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bullish_doji_star());
     /// ```
@@ -109,8 +109,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (48.0, 52.5, 47.8, 52.0);
-    /// let curr = (52.6, 53.2, 52.6, 52.6);
+    /// let prev = (48.0, 52.5, 47.8, 52.0, 0.0);
+    /// let curr = (52.6, 53.2, 52.6, 52.6, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bearish_doji_star());
     /// ```
@@ -135,8 +135,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (101.0, 102.0, 99.5, 100.5); // bearish: open > close
-    /// let curr = (99.0, 103.0, 98.5, 102.5);  // bullish: open < close, engulfs prev body
+    /// let prev = (101.0, 102.0, 99.5, 100.5, 0.0); // bearish: open > close
+    /// let curr = (99.0, 103.0, 98.5, 102.5, 0.0);  // bullish: open < close, engulfs prev body
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bullish_engulfing());
     /// ```
@@ -160,8 +160,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (99.0, 100.5, 98.5, 100.0);  // bullish: open < close
-    /// let curr = (101.5, 102.0, 97.0, 98.5);  // bearish: open > close, engulfs prev body
+    /// let prev = (99.0, 100.5, 98.5, 100.0, 0.0);  // bullish: open < close
+    /// let curr = (101.5, 102.0, 97.0, 98.5, 0.0);  // bearish: open > close, engulfs prev body
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bearish_engulfing());
     /// ```
@@ -185,8 +185,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (129.0, 130.0, 124.0, 125.0);
-    /// let curr = (125.2, 127.0, 124.8, 126.5);
+    /// let prev = (129.0, 130.0, 124.0, 125.0, 0.0);
+    /// let curr = (125.2, 127.0, 124.8, 126.5, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bullish_harami());
     /// ```
@@ -210,8 +210,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (124.0, 129.0, 122.0, 127.0);
-    /// let curr = (126.9, 129.7, 125.0, 124.8);
+    /// let prev = (124.0, 129.0, 122.0, 127.0, 0.0);
+    /// let curr = (126.9, 129.7, 125.0, 124.8, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_bearish_harami());
     /// ```
@@ -235,8 +235,8 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev = (100.0, 105.0, 99.5, 104.5);
-    /// let curr = (105.5, 106.0, 102.0, 101.5);
+    /// let prev = (100.0, 105.0, 99.5, 104.5, 0.0);
+    /// let curr = (105.5, 106.0, 102.0, 101.5, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev).push(&curr).is_dark_cloud_cover());
     /// ```
@@ -245,7 +245,7 @@ impl<T: CandleStick> CandleStream<'_, T> {
             c.is_bearish()
                 && p.is_bullish()
                 && c.open() > p.close()
-                && c.close() < T::midpoint(p.open(), p.close())
+                && c.close() < midpoint(p.open(), p.close())
         })
     }
 
@@ -265,9 +265,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 = (100.0, 106.0, 99.5, 105.5);
-    /// let prev1 = (106.2, 107.0, 105.8, 106.5);
-    /// let curr = (105.5, 106.0, 102.0, 101.5);
+    /// let prev2 = (100.0, 106.0, 99.5, 105.5, 0.0);
+    /// let prev1 = (106.2, 107.0, 105.8, 106.5, 0.0);
+    /// let curr = (105.5, 106.0, 102.0, 101.5, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_evening_star());
     /// ```
@@ -279,7 +279,7 @@ impl<T: CandleStick> CandleStream<'_, T> {
                 p2.is_bullish()
                     && (p1.is_doji() || p1.open() < p1.close())
                     && c.is_bearish()
-                    && c.close() < T::midpoint(p2.open(), p2.close())
+                    && c.close() < midpoint(p2.open(), p2.close())
             })
     }
 
@@ -298,9 +298,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 =  (100.0, 106.0, 99.5, 105.5);
-    /// let prev1 =  (106.1, 107.0, 105.8, 106.1);
-    /// let curr = (105.0, 105.2, 99.8, 101.0);
+    /// let prev2 =  (100.0, 106.0, 99.5, 105.5, 0.0);
+    /// let prev1 =  (106.1, 107.0, 105.8, 106.1, 0.0);
+    /// let curr = (105.0, 105.2, 99.8, 101.0, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_evening_star_doji());
     /// ```
@@ -311,7 +311,7 @@ impl<T: CandleStick> CandleStream<'_, T> {
             .is_some_and(|((c, p1), p2)| {
                 p2.is_bullish()
                     && p1.is_doji() & c.is_bearish()
-                    && c.close() < T::midpoint(p2.open(), p2.close())
+                    && c.close() < midpoint(p2.open(), p2.close())
             })
     }
 
@@ -331,9 +331,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 = (52.0, 52.5, 48.0, 48.5);
-    /// let prev1 = (48.2, 48.9, 47.5, 48.3);
-    /// let curr = (48.7, 51.5, 48.5, 51.2);   
+    /// let prev2 = (52.0, 52.5, 48.0, 48.5, 0.0);
+    /// let prev1 = (48.2, 48.9, 47.5, 48.3, 0.0);
+    /// let curr = (48.7, 51.5, 48.5, 51.2, 0.0);   
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_morning_star());
     /// ```
@@ -345,7 +345,7 @@ impl<T: CandleStick> CandleStream<'_, T> {
                 p2.is_bearish()
                     && (p1.is_doji() || p1.open() < p1.close())
                     && c.is_bullish()
-                    && c.close() > T::midpoint(p2.open(), p2.close())
+                    && c.close() > midpoint(p2.open(), p2.close())
             })
     }
 
@@ -364,9 +364,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 = (52.0, 52.5, 48.0, 48.5);
-    /// let prev1 = (48.3, 48.9, 47.5, 48.4);
-    /// let curr =  (48.7, 51.5, 48.5, 51.2);
+    /// let prev2 = (52.0, 52.5, 48.0, 48.5, 0.0);
+    /// let prev1 = (48.3, 48.9, 47.5, 48.4, 0.0);
+    /// let curr =  (48.7, 51.5, 48.5, 51.2, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_morning_star_doji());
     /// ```
@@ -378,7 +378,7 @@ impl<T: CandleStick> CandleStream<'_, T> {
                 p2.is_bearish()
                     && p1.is_doji()
                     && c.is_bullish()
-                    && c.close() > T::midpoint(p2.open(), p2.close())
+                    && c.close() > midpoint(p2.open(), p2.close())
             })
     }
 
@@ -397,9 +397,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 = (48.0, 50.5, 47.8, 50.2);
-    /// let prev1 = (50.3, 52.7, 50.1, 52.4);
-    /// let curr =  (52.5, 54.8, 52.3, 54.5);
+    /// let prev2 = (48.0, 50.5, 47.8, 50.2, 0.0);
+    /// let prev1 = (50.3, 52.7, 50.1, 52.4, 0.0);
+    /// let curr =  (52.5, 54.8, 52.3, 54.5, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_three_white_soldiers());
     /// ```
@@ -433,9 +433,9 @@ impl<T: CandleStick> CandleStream<'_, T> {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStream;
-    /// let prev2 = (54.0, 54.5, 51.8, 52.2);
-    /// let prev1 = (52.0, 52.3, 49.7, 50.4);
-    /// let curr =  (50.2, 50.5, 47.9, 48.3);
+    /// let prev2 = (54.0, 54.5, 51.8, 52.2, 0.0);
+    /// let prev1 = (52.0, 52.3, 49.7, 50.4, 0.0);
+    /// let curr =  (50.2, 50.5, 47.9, 48.3, 0.0);
     /// let mut series = CandleStream::new();
     /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_three_black_crows());
     /// ```

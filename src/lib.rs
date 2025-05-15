@@ -14,6 +14,8 @@
     clippy::unimplemented
 )]
 
+pub(crate) mod utils;
+
 mod candle_stick;
 pub use candle_stick::CandleStick;
 

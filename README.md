@@ -41,10 +41,8 @@ A `no_std` and zero-dependency Rust library for identifying Japanese candlestick
 
 ## 🚀 Getting Started
 
-```toml
-# Cargo.toml
-[dependencies]
-candlestick-rs = "0.1.0"
+```bash
+cargo add candlestick-rs
 ```
 
 ## 💻 Usage Examples
@@ -54,8 +52,8 @@ candlestick-rs = "0.1.0"
 ```rust
 use candlestick_rs::CandleStick;
 
-// Simple tuple representation: (open, high, low, close)
-let candle = (100.0, 105.0, 99.0, 101.0);
+// Simple tuple representation: (open, high, low, close, volume)
+let candle = (100.0, 105.0, 99.0, 101.0, 0.0);
 
 // Check for patterns
 if candle.is_hammer() {
@@ -70,9 +68,9 @@ if candle.is_hammer() {
 ```rust
 use candlestick_rs::{CandleStick, CandleStream};
 
-// Create candles (open, high, low, close)
-let candle1 = (100.0, 105.0, 99.0, 101.0);  // Day 1
-let candle2 = (102.0, 110.0, 101.5, 109.5); // Day 2
+// Create candles (open, high, low, close, volume)
+let candle1 = (100.0, 105.0, 99.0, 101.0, 0.0);  // Day 1
+let candle2 = (102.0, 110.0, 101.5, 109.5, 0.0); // Day 2
 
 // Create a stream and add candles
 let mut stream = CandleStream::new();
@@ -94,7 +92,8 @@ struct MyCandle {
     high: f64,
     low: f64,
     close: f64,
-    // ... other fields (volume, timestamp, etc.)
+    volume: f64
+    // ... other fields (timestamp, etc.)
 }
 
 impl CandleStick for MyCandle {
@@ -102,10 +101,11 @@ impl CandleStick for MyCandle {
     fn high(&self) -> f64 { self.high }
     fn low(&self) -> f64 { self.low }
     fn close(&self) -> f64 { self.close }
+    fn volume(&self) -> f64 { self.volume }
 }
 
 // Now you can use all pattern detection methods!
-let my_candle = MyCandle { open: 100.0, high: 105.0, low: 99.0, close: 103.0, /* ... */ };
+let my_candle = MyCandle { open: 100.0, high: 105.0, low: 99.0, close: 103.0, volume: 1.0 };
 if my_candle.is_bullish_marubozu() {
     println!("Strong bullish conviction detected!");
 }

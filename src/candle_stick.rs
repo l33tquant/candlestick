@@ -16,59 +16,81 @@ pub trait CandleStick {
     /// Can be overridden for custom ratio.
     ///
     /// Default: __30%__
-    const HAMMER_BODY_RATIO: f64 = 0.3;
+    fn hammer_body_ratio(&self) -> f64 {
+        0.3
+    }
 
-    /// Hammer upper shadow or wick to range ratio. Also, inversly used as tail to range ratio for inverse hammer pattern.
+    /// Hammer upper shadow or wick to range ratio. Also, inversely used as tail to range ratio for inverse hammer pattern.
     /// Can be overridden for custom ratio
     ///
     /// Default: __20%__
-    const HAMMER_WICK_RATIO: f64 = 0.2;
+    fn hammer_wick_ratio(&self) -> f64 {
+        0.2
+    }
 
-    /// Hammer lower shadow or tail to range ratio. Also, inversly used as wick to range ratio for inverse hammer pattern.
+    /// Hammer lower shadow or tail to range ratio. Also, inversely used as wick to range ratio for inverse hammer pattern.
     /// Can be overridden for custom ratio
     ///
     /// Default: __60%__
-    const HAMMER_TAIL_RATIO: f64 = 0.6;
+    fn hammer_tail_ratio(&self) -> f64 {
+        0.6
+    }
 
     /// Spinning top body ratio. Can be overridden for custom ratio
     ///
     /// Default: __20%__
-    const SPINNING_TOP_BODY_RATIO: f64 = 0.2;
+    fn spinning_top_body_ratio(&self) -> f64 {
+        0.2
+    }
 
     /// Spinning top shadow ratio. Can be overridden for custom ratio
     ///
     /// Default: __30%__
-    const SPINNING_TOP_SHADOW_RATIO: f64 = 0.3;
+    fn spinning_top_shadow_ratio(&self) -> f64 {
+        0.3
+    }
 
     /// Doji body to range ratio. Can be overridden for custom ratio.
     ///
     /// Default: __10%__
-    const DOJI_BODY_RATIO: f64 = 0.1;
+    fn doji_body_ratio(&self) -> f64 {
+        0.1
+    }
 
     /// Doji long leg to range ratio. Can be overridden for custom ratio.
     ///
     /// Default: __30%__
-    const DOJI_LONG_LEG_RATIO: f64 = 0.3;
+    fn doji_long_leg_ratio(&self) -> f64 {
+        0.3
+    }
 
     /// Doji tail to range ratio. Can be overridden for custom ratio.
     ///
     /// Default: __30%__
-    const DOJI_TAIL_RATIO: f64 = 0.3;
+    fn doji_tail_ratio(&self) -> f64 {
+        0.3
+    }
 
     /// Doji wick to range ratio. Can be overridden for custom ratio.
     ///
     /// Default: __30%__
-    const DOJI_WICK_RATIO: f64 = 0.3;
+    fn doji_wick_ratio(&self) -> f64 {
+        0.3
+    }
 
     /// Doji minimum ratio. Can be overridden for custom ratio.
     ///
     /// Default: __5%__
-    const DOJI_MIN_RATIO: f64 = 0.05;
+    fn doji_min_ratio(&self) -> f64 {
+        0.05
+    }
 
     /// Marubozu minimum ratio. Can be overridden for custom ratio.
     ///
     /// Default: __20%__
-    const MARUBOZU_RATIO: f64 = 0.2;
+    fn marubozu_ratio(&self) -> f64 {
+        0.2
+    }
 
     /// Returns the open price
     fn open(&self) -> f64;
@@ -82,6 +104,9 @@ pub trait CandleStick {
     /// Returns the close price
     fn close(&self) -> f64;
 
+    /// Returns the volume
+    fn volume(&self) -> f64;
+
     /// Helper function to return the OHLC tuple
     #[doc(hidden)]
     fn ohlc(&self) -> (f64, f64, f64, f64) {
@@ -91,7 +116,7 @@ pub trait CandleStick {
     /// Helper function to return the candle length with small epsilon
     #[doc(hidden)]
     fn range(&self) -> f64 {
-        self.high() - self.low() + 0.001
+        (self.high() - self.low()).max(0.001)
     }
 
     /// Helper function to return the candle wick length of the candle
@@ -103,7 +128,7 @@ pub trait CandleStick {
     /// Helper function to return the candle body as the absolute difference between the open and close prices with small epsilon
     #[doc(hidden)]
     fn body(&self) -> f64 {
-        (self.open() - self.close()).abs() + 0.0001
+        ((self.open() - self.close()).abs()).max(0.0001)
     }
 
     /// Helper function to return the candle tail length
@@ -142,12 +167,6 @@ pub trait CandleStick {
         self.tail() / self.body()
     }
 
-    /// Helper function to calculate mid point
-    #[doc(hidden)]
-    fn midpoint(lhs: f64, rhs: f64) -> f64 {
-        (lhs + rhs) / 2.0
-    }
-
     /// Identifies a Bullish Candlestick, a foundational pattern in price action analysis.
     ///
     /// This basic pattern forms when the closing price is higher than the opening price,
@@ -163,7 +182,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 110.0, 99.0, 109.0);
+    /// let candle = (100.0, 110.0, 99.0, 109.0, 0.0);
     /// assert!(candle.is_bullish());
     /// ```
     fn is_bullish(&self) -> bool {
@@ -185,7 +204,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (110.0, 111.0, 99.0, 100.0);
+    /// let candle = (110.0, 111.0, 99.0, 100.0, 0.0);
     /// assert!(candle.is_bearish());
     /// ```
     fn is_bearish(&self) -> bool {
@@ -207,12 +226,12 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 110.0, 99.0, 109.0);
+    /// let candle = (100.0, 110.0, 99.0, 109.0, 0.0);
     /// assert!(candle.is_marubozu());
     /// ```
     fn is_marubozu(&self) -> bool {
-        self.wick_body_ratio() < Self::MARUBOZU_RATIO
-            && self.tail_body_ratio() < Self::MARUBOZU_RATIO
+        self.wick_body_ratio() < self.marubozu_ratio()
+            && self.tail_body_ratio() < self.marubozu_ratio()
     }
 
     /// Identifies a Bullish Marubozu, a powerful signal of buyer dominance.
@@ -231,7 +250,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 110.0, 99.0, 109.0);
+    /// let candle = (100.0, 110.0, 99.0, 109.0, 0.0);
     /// assert!(candle.is_bullish_marubozu());
     /// ```
     fn is_bullish_marubozu(&self) -> bool {
@@ -254,7 +273,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (110.0, 111.0, 99.0, 100.0);
+    /// let candle = (110.0, 111.0, 99.0, 100.0, 0.0);
     /// assert!(candle.is_bearish_marubozu());
     /// ```
     fn is_bearish_marubozu(&self) -> bool {
@@ -276,13 +295,13 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 101.0, 95.0, 100.8);
+    /// let candle = (100.0, 101.0, 95.0, 100.8, 0.0);
     /// assert!(candle.is_hammer());
     /// ```
     fn is_hammer(&self) -> bool {
-        self.body_range_ratio() < Self::HAMMER_BODY_RATIO
-            && self.wick_range_ratio() < Self::HAMMER_WICK_RATIO
-            && self.tail_range_ratio() > Self::HAMMER_TAIL_RATIO
+        self.body_range_ratio() < self.hammer_body_ratio()
+            && self.wick_range_ratio() < self.hammer_wick_ratio()
+            && self.tail_range_ratio() > self.hammer_tail_ratio()
     }
 
     /// Identifies an Inverted Hammer pattern, a potential bullish reversal signal.
@@ -300,13 +319,13 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 104.0, 99.8, 100.5);
+    /// let candle = (100.0, 104.0, 99.8, 100.5, 0.0);
     /// assert!(candle.is_inverted_hammer());
     /// ```
     fn is_inverted_hammer(&self) -> bool {
-        self.body_range_ratio() < Self::HAMMER_BODY_RATIO
-            && self.wick_range_ratio() > Self::HAMMER_TAIL_RATIO
-            && self.tail_range_ratio() < Self::HAMMER_WICK_RATIO
+        self.body_range_ratio() < self.hammer_body_ratio()
+            && self.wick_range_ratio() > self.hammer_tail_ratio()
+            && self.tail_range_ratio() < self.hammer_wick_ratio()
     }
 
     /// Identifies a Hanging Man pattern, an important bearish reversal signal.
@@ -324,7 +343,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (592.0, 593.75, 587.0, 593.0);
+    /// let candle = (592.0, 593.75, 587.0, 593.0, 0.0);
     /// assert!(candle.is_hanging_man());
     /// ```
     fn is_hanging_man(&self) -> bool {
@@ -346,7 +365,7 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 106.0, 99.7, 100.8);
+    /// let candle = (100.0, 106.0, 99.7, 100.8, 0.0);
     /// assert!(candle.is_shooting_star());
     /// ```
     fn is_shooting_star(&self) -> bool {
@@ -368,13 +387,13 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 105.0, 95.0, 100.5);
+    /// let candle = (100.0, 105.0, 95.0, 100.5, 0.0);
     /// assert!(candle.is_spinning_top());
     /// ```
     fn is_spinning_top(&self) -> bool {
-        self.body_range_ratio() < Self::SPINNING_TOP_BODY_RATIO
-            && self.wick_range_ratio() > Self::SPINNING_TOP_SHADOW_RATIO
-            && self.tail_range_ratio() > Self::SPINNING_TOP_SHADOW_RATIO
+        self.body_range_ratio() < self.spinning_top_body_ratio()
+            && self.wick_range_ratio() > self.spinning_top_shadow_ratio()
+            && self.tail_range_ratio() > self.spinning_top_shadow_ratio()
     }
 
     /// Identifies a Doji pattern, a powerful signal of market equilibrium and indecision.
@@ -392,11 +411,11 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 105.0, 95.0, 100.0);
+    /// let candle = (100.0, 105.0, 95.0, 100.0, 0.0);
     /// assert!(candle.is_doji());
     /// ```
     fn is_doji(&self) -> bool {
-        self.body_range_ratio() < Self::DOJI_BODY_RATIO
+        self.body_range_ratio() < self.doji_body_ratio()
     }
 
     /// Identifies a Long-Legged Doji, a volatility-based signal of strong market indecision.
@@ -414,13 +433,13 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 110.0, 90.0, 100.2);
+    /// let candle = (100.0, 110.0, 90.0, 100.2, 0.0);
     /// assert!(candle.is_long_legged_doji());
     /// ```
     fn is_long_legged_doji(&self) -> bool {
         self.is_doji()
-            && self.tail_range_ratio() > Self::DOJI_LONG_LEG_RATIO
-            && self.wick_range_ratio() > Self::DOJI_LONG_LEG_RATIO
+            && self.tail_range_ratio() > self.doji_long_leg_ratio()
+            && self.wick_range_ratio() > self.doji_long_leg_ratio()
     }
 
     /// Identifies a Dragonfly Doji, a specialized pattern suggesting potential bullish reversal.
@@ -438,13 +457,13 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 100.5, 90.0, 100.1);
+    /// let candle = (100.0, 100.5, 90.0, 100.1, 0.0);
     /// assert!(candle.is_dragonfly_doji());
     /// ```
     fn is_dragonfly_doji(&self) -> bool {
         self.is_doji()
-            && self.tail_range_ratio() > Self::DOJI_TAIL_RATIO
-            && self.wick_range_ratio() < Self::DOJI_MIN_RATIO
+            && self.tail_range_ratio() > self.doji_tail_ratio()
+            && self.wick_range_ratio() < self.doji_min_ratio()
     }
 
     /// Identifies a Gravestone Doji, a specialized pattern suggesting potential bearish reversal.
@@ -462,34 +481,23 @@ pub trait CandleStick {
     /// # Example
     /// ```
     /// use candlestick_rs::CandleStick;
-    /// let candle = (100.0, 110.0, 99.5, 100.1);
+    /// let candle = (100.0, 110.0, 99.5, 100.1, 0.0);
     /// assert!(candle.is_gravestone_doji());
     /// ```
     fn is_gravestone_doji(&self) -> bool {
         self.is_doji()
-            && self.wick_range_ratio() > Self::DOJI_WICK_RATIO
-            && self.tail_range_ratio() < Self::DOJI_MIN_RATIO
-    }
-}
-
-impl CandleStick for (f64, f64, f64, f64) {
-    fn open(&self) -> f64 {
-        self.0
+            && self.wick_range_ratio() > self.doji_wick_ratio()
+            && self.tail_range_ratio() < self.doji_min_ratio()
     }
 
-    /// Returns the high price
-    fn high(&self) -> f64 {
-        self.1
+    /// Summarizes the price action for the candle
+    fn typical_price(&self) -> f64 {
+        (self.high() + self.low() + self.close()) / 3.0
     }
 
-    /// Returns the low price
-    fn low(&self) -> f64 {
-        self.2
-    }
-
-    /// Returns the close price
-    fn close(&self) -> f64 {
-        self.3
+    /// Flow of money into or out
+    fn raw_money_flow(&self) -> f64 {
+        self.typical_price() * self.volume()
     }
 }
 
@@ -511,5 +519,10 @@ impl CandleStick for (f64, f64, f64, f64, f64) {
     /// Returns the close price
     fn close(&self) -> f64 {
         self.3
+    }
+
+    /// Returns the volume
+    fn volume(&self) -> f64 {
+        self.4
     }
 }
