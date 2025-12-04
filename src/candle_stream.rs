@@ -453,6 +453,81 @@ impl<T: CandleStick> CandleStream<'_, T> {
                     && c.close() < p1.close()
             })
     }
+
+    /// Identifies the Three Inside Up pattern, a bullish reversal.
+    ///
+    /// This three-candle pattern typically appears in a downtrend and signals a potential
+    /// shift from bearish to bullish momentum. This pattern can be seen as a confirmation or
+    /// continuation of a bullish harami.
+    ///
+    /// **Trading Significance**:
+    /// - Suggests that prior selling pressure is weakening
+    /// - Indicates buyers are starting to regain control
+    /// - Often used as an early sign of a bullish reversal after a down move
+    /// - Considerably stronger when combined with support levels, volume confirmation,
+    ///   or higher-timeframe confluence
+    ///
+    /// # Example
+    /// ```
+    /// use candlestick_rs::CandleStream;
+    ///
+    /// let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+    /// let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+    /// let curr  = (52.9, 55.0, 52.7, 54.5, 0.0);
+    /// let mut series = CandleStream::new();
+    /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_three_inside_up());
+    /// ```
+    pub fn is_three_inside_up(&self) -> bool {
+        self.get()
+            .zip(self.prev(1))
+            .zip(self.prev(2))
+            .is_some_and(|((c, p1), p2)| {
+                p2.is_bearish()
+                    && p1.is_bullish()
+                    && p1.open() > p2.close()
+                    && p1.close() < p2.open()
+                    && c.is_bullish()
+                    && c.close() > p1.close()
+                    && !c.is_doji()
+            })
+    }
+
+    /// Identifies the Three Inside Down pattern, a bearish reversal.
+    ///
+    /// This three-candle pattern typically appears in an uptrend and signals a potential
+    /// shift from bullish to bearish momentum. This pattern can be seen as a confirmation or
+    /// continuation of a bearish harami.
+    ///
+    /// **Trading Significance**:
+    /// - Suggests that prior buying pressure is weakening
+    /// - Indicates sellers are starting to regain control
+    /// - Often used as an early sign of a bearish reversal after an up move
+    /// - Considerably stronger when combined with resistance levels, volume confirmation,
+    ///   or higher-timeframe confluence
+    ///
+    /// # Example
+    /// ```
+    /// use candlestick_rs::CandleStream;
+    /// let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+    /// let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+    /// let curr  = (48.8, 49.0, 47.5, 47.9, 0.0);
+    /// let mut series = CandleStream::new();
+    /// assert!(series.push(&prev2).push(&prev1).push(&curr).is_three_inside_down());
+    /// ```
+    pub fn is_three_inside_down(&self) -> bool {
+        self.get()
+            .zip(self.prev(1))
+            .zip(self.prev(2))
+            .is_some_and(|((c, p1), p2)| {
+                p2.is_bullish()
+                    && p1.is_bearish()
+                    && p1.open() < p2.close()
+                    && p1.close() > p2.open()
+                    && c.is_bearish()
+                    && c.close() < p1.close()
+                    && !c.is_doji()
+            })
+    }
 }
 
 impl<T> Default for CandleStream<'_, T> {
@@ -461,5 +536,392 @@ impl<T> Default for CandleStream<'_, T> {
             series: [const { None }; SERIES_SIZE],
             idx: 0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_three_inside_up() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_three_inside_up_if_curr_engulfs_prev1() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let curr_engulf_prev1 = (52.0, 55.0, 51.9, 53.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr_engulf_prev1)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_curr_is_doji() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let doji = (53.4, 55.0, 52.7, 53.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&doji)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev2_not_bearish() {
+        let not_bearish_prev2 = (52.0, 54.5, 51.8, 54.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0); // valid curr
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&not_bearish_prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev2_is_doji() {
+        let doji_prev2 = (53.0, 54.5, 51.8, 53.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&doji_prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev1_not_bullish() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let not_bullish_prev1 = (52.8, 53.0, 52.0, 52.2, 0.0); // open > close
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&not_bullish_prev1)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev1_opens_below_prev2_close() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1_open_below_prev2 = (51.9, 53.0, 51.8, 52.5, 0.0);
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_open_below_prev2)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev1_closes_above_prev2_open() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1_close_above_prev2 = (52.2, 55.0, 52.0, 54.5, 0.0);
+        let curr = (54.6, 56.0, 52.7, 55.0, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_close_above_prev2)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev1_engulfs_prev2() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1_engulf_prev2 = (51.5, 55.0, 51.0, 54.5, 0.0);
+        let curr = (54.6, 56.0, 53.5, 55.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_engulf_prev2)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_prev1_is_doji() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let doji_prev1 = (52.8, 53.0, 52.0, 52.8, 0.0);
+        let curr = (52.9, 55.0, 52.7, 54.5, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&doji_prev1)
+            .push(&curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_curr_is_inside_prev1() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let curr_inside_prev1 = (52.3, 53.1, 52.1, 52.7, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr_inside_prev1)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_if_curr_not_bullish() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+        let not_bullish_curr = (55.0, 55.5, 52.7, 53.0, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&not_bullish_curr)
+            .is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_up_with_insufficient_candles() {
+        let prev2 = (54.0, 54.5, 51.8, 52.0, 0.0);
+        let prev1 = (52.2, 53.0, 52.0, 52.8, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series.push(&prev2).is_three_inside_up());
+        assert!(!series.push(&prev1).is_three_inside_up());
+    }
+
+    #[test]
+    fn test_is_three_inside_down() {
+        let prev2: (f64, f64, f64, f64, f64) = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1: (f64, f64, f64, f64, f64) = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let curr: (f64, f64, f64, f64, f64) = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series: CandleStream<'_, (f64, f64, f64, f64, f64)> = CandleStream::new();
+
+        assert!(series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_three_inside_down_if_curr_engulfs_prev1() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let curr_engulf_prev1 = (49.8, 50.0, 47.5, 48.8, 0.0); // open > prev1.open, close < prev1.close
+
+        let mut series = CandleStream::new();
+
+        assert!(series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr_engulf_prev1)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_curr_is_doji() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let doji = (48.5, 50.0, 47.5, 48.5, 0.0); // open == close
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&doji)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev2_not_bullish() {
+        let not_bullish_prev2 = (50.0, 50.5, 47.8, 48.0, 0.0); // bearish instead of bullish
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0); // valid curr
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&not_bullish_prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev2_is_doji() {
+        let doji_prev2 = (49.0, 50.5, 47.8, 49.0, 0.0); // open == close
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&doji_prev2)
+            .push(&prev1)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev1_not_bearish() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let not_bearish_prev1 = (48.5, 49.5, 48.0, 49.2, 0.0); // open < close
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&not_bearish_prev1)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev1_opens_above_prev2_close() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1_open_above_prev2 = (50.2, 50.5, 48.5, 49.5, 0.0);
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_open_above_prev2)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev1_closes_below_prev2_open() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1_close_below_prev2 = (49.5, 49.8, 47.5, 47.9, 0.0); // close < 48.0
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_close_below_prev2)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev1_engulfs_prev2() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0); // body [48.0, 50.0]
+        let prev1_engulf_prev2 = (50.5, 51.0, 47.0, 47.5, 0.0); // open > 50.0, close < 48.0
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1_engulf_prev2)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_prev1_is_doji() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let doji_prev1 = (49.0, 49.5, 48.5, 49.0, 0.0); // open == close
+        let curr = (48.8, 49.0, 47.5, 47.9, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&doji_prev1)
+            .push(&curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_curr_is_inside_prev1() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0); // body [49.0, 49.5]
+        let curr_inside_prev1 = (49.4, 49.6, 48.8, 49.1, 0.0); // close 49.1 > 49.0
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&curr_inside_prev1)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_if_curr_not_bearish() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+        let not_bearish_curr = (47.8, 48.5, 47.5, 48.6, 0.0); // bullish
+
+        let mut series = CandleStream::new();
+
+        assert!(!series
+            .push(&prev2)
+            .push(&prev1)
+            .push(&not_bearish_curr)
+            .is_three_inside_down());
+    }
+
+    #[test]
+    fn test_is_not_three_inside_down_with_insufficient_candles() {
+        let prev2 = (48.0, 50.5, 47.8, 50.0, 0.0);
+        let prev1 = (49.5, 49.8, 48.5, 49.0, 0.0);
+
+        let mut series = CandleStream::new();
+
+        assert!(!series.push(&prev2).is_three_inside_down());
+        assert!(!series.push(&prev1).is_three_inside_down());
     }
 }
