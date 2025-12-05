@@ -1,6 +1,6 @@
 [package]
 name = "candlestick-rs"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Dhruv Soi<l33t.quant@gmail.com>"]
 description = "Candlestick pattern recognition library for technical analysis"
