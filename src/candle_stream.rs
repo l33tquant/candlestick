@@ -43,6 +43,15 @@ impl<'s, T> CandleStream<'s, T> {
         Self::default()
     }
 
+    // Returns the index of the nth last candle
+    fn nth_index(&self, n: usize) -> Option<usize> {
+        if n > SERIES_SIZE {
+            return None;
+        }
+
+        Some((self.idx + SERIES_SIZE - n) % SERIES_SIZE)
+    }
+
     // Returns the candle at the given index
     fn at(&self, idx: usize) -> Option<&T> {
         match idx < SERIES_SIZE {
@@ -53,12 +62,12 @@ impl<'s, T> CandleStream<'s, T> {
 
     // Fetches reference to the current candle
     fn get(&self) -> Option<&T> {
-        self.at(self.idx.checked_sub(1)?)
+        self.at(self.nth_index(1)?)
     }
 
     // Returns the previous candle
     fn prev(&self, n: usize) -> Option<&T> {
-        self.at(self.idx.checked_sub(n + 1)?)
+        self.at(self.nth_index(n + 1)?)
     }
 
     /// Pushes a candle to the series
@@ -542,6 +551,119 @@ impl<T> Default for CandleStream<'_, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_nth_index() {
+        let candle1 = (100.0, 105.0, 99.0, 104.0, 0.0);
+        let candle2 = (104.5, 110.0, 104.0, 109.0, 0.0);
+        let candle3 = (109.5, 112.0, 108.0, 111.0, 0.0);
+        let candle4 = (111.5, 115.0, 110.0, 114.0, 0.0);
+        let candle5 = (114.5, 118.0, 113.0, 117.0, 0.0);
+        let candle6 = (117.5, 120.0, 116.0, 119.0, 0.0);
+
+        let mut stream = CandleStream::new();
+
+        assert_eq!(stream.nth_index(6), None);
+
+        stream.push(&candle1).push(&candle2);
+
+        assert_eq!(stream.nth_index(0), Some(2));
+        assert_eq!(stream.nth_index(1), Some(1));
+        assert_eq!(stream.nth_index(2), Some(0));
+
+        stream.push(&candle3).push(&candle4).push(&candle5);
+
+        assert_eq!(stream.nth_index(0), Some(0));
+        assert_eq!(stream.nth_index(1), Some(4));
+        assert_eq!(stream.nth_index(2), Some(3));
+        assert_eq!(stream.nth_index(3), Some(2));
+        assert_eq!(stream.nth_index(4), Some(1));
+        assert_eq!(stream.nth_index(5), Some(0));
+
+        stream.push(&candle6);
+
+        assert_eq!(stream.nth_index(0), Some(1));
+        assert_eq!(stream.nth_index(1), Some(0));
+        assert_eq!(stream.nth_index(2), Some(4));
+        assert_eq!(stream.nth_index(3), Some(3));
+        assert_eq!(stream.nth_index(4), Some(2));
+        assert_eq!(stream.nth_index(5), Some(1));
+    }
+
+    #[test]
+    fn test_at() {
+        let candle1 = (100.0, 105.0, 99.0, 104.0, 0.0);
+        let candle2 = (104.5, 110.0, 104.0, 109.0, 0.0);
+        let candle3 = (109.5, 112.0, 108.0, 111.0, 0.0);
+        let candle4 = (111.5, 115.0, 110.0, 114.0, 0.0);
+        let candle5 = (114.5, 118.0, 113.0, 117.0, 0.0);
+        let candle6 = (117.5, 120.0, 116.0, 119.0, 0.0);
+
+        let mut stream = CandleStream::new();
+        stream.push(&candle1).push(&candle2);
+
+        assert_eq!(stream.at(0), Some(&candle1));
+        assert_eq!(stream.at(1), Some(&candle2));
+        assert_eq!(stream.at(2), None);
+
+        stream.push(&candle3).push(&candle4).push(&candle5);
+
+        assert_eq!(stream.at(0), Some(&candle1));
+        assert_eq!(stream.at(1), Some(&candle2));
+        assert_eq!(stream.at(2), Some(&candle3));
+        assert_eq!(stream.at(3), Some(&candle4));
+        assert_eq!(stream.at(4), Some(&candle5));
+
+        stream.push(&candle6);
+
+        assert_eq!(stream.at(0), Some(&candle6));
+        assert_eq!(stream.at(1), Some(&candle2));
+        assert_eq!(stream.at(2), Some(&candle3));
+        assert_eq!(stream.at(3), Some(&candle4));
+        assert_eq!(stream.at(4), Some(&candle5));
+    }
+
+    #[test]
+    fn test_get() {
+        let candle1 = (100.0, 105.0, 99.0, 104.0, 0.0);
+        let candle2 = (104.5, 110.0, 104.0, 109.0, 0.0);
+        let candle3 = (109.5, 112.0, 108.0, 111.0, 0.0);
+
+        let mut stream = CandleStream::new();
+        assert_eq!(stream.get(), None);
+
+        stream.push(&candle1);
+        assert_eq!(stream.get(), Some(&candle1));
+
+        stream.push(&candle2);
+        assert_eq!(stream.get(), Some(&candle2));
+
+        stream.push(&candle3).push(&candle1).push(&candle2);
+        assert_eq!(stream.get(), Some(&candle2));
+
+        stream.push(&candle3);
+        assert_eq!(stream.get(), Some(&candle3));
+    }
+
+    #[test]
+    fn test_prev() {
+        let candle1 = (100.0, 105.0, 99.0, 104.0, 0.0);
+        let candle2 = (104.5, 110.0, 104.0, 109.0, 0.0);
+        let candle3 = (109.5, 112.0, 108.0, 111.0, 0.0);
+
+        let mut stream = CandleStream::new();
+        assert_eq!(stream.prev(1), None);
+
+        stream.push(&candle1);
+        assert_eq!(stream.prev(1), None);
+
+        stream.push(&candle2);
+        assert_eq!(stream.prev(1), Some(&candle1));
+
+        stream.push(&candle3);
+        assert_eq!(stream.prev(1), Some(&candle2));
+        assert_eq!(stream.prev(2), Some(&candle1));
+    }
 
     #[test]
     fn test_is_three_inside_up() {
