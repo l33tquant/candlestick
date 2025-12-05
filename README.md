@@ -35,7 +35,7 @@ A `no_std` and zero-dependency Rust library for identifying Japanese candlestick
 
 ### Multi-Candle Patterns
 
-- Reversals: Engulfing, Harami, Morning/Evening Star
+- Reversals: Engulfing, Harami, Morning/Evening Star, Three Inside Up/Down
 - Continuations: Three White Soldiers, Three Black Crows
 - Complex Formations: Dark Cloud Cover, Doji Star patterns
 
