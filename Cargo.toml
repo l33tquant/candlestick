@@ -2,7 +2,10 @@
 name = "candlestick-rs"
 version = "0.2.2"
 edition = "2021"
-authors = ["Dhruv Soi<l33t.quant@gmail.com>"]
+authors = [
+    "Dhruv Soi<l33t.quant@gmail.com>",
+    "Facundo La Rocca<facu.larocca@gmail.com>",
+]
 description = "Candlestick pattern recognition library for technical analysis"
 license = "MIT"
 repository = "https://github.com/l33tquant/candlestick"
