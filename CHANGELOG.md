@@ -1,3 +1,7 @@
+## v0.2.3 (Dec 22, 2025)
+
+- Implemented CandleStick trait for tuple reference
+
 ## v0.2.2 (Dec 6, 2025)
 
 - Bug fixed in get and prev functions  - contribution by @flarocca (#2)

@@ -526,3 +526,29 @@ impl CandleStick for (f64, f64, f64, f64, f64) {
         self.4
     }
 }
+
+impl CandleStick for &(f64, f64, f64, f64, f64) {
+    fn open(&self) -> f64 {
+        self.0
+    }
+
+    /// Returns the high price
+    fn high(&self) -> f64 {
+        self.1
+    }
+
+    /// Returns the low price
+    fn low(&self) -> f64 {
+        self.2
+    }
+
+    /// Returns the close price
+    fn close(&self) -> f64 {
+        self.3
+    }
+
+    /// Returns the volume
+    fn volume(&self) -> f64 {
+        self.4
+    }
+}
